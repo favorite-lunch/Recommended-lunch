@@ -49,12 +49,14 @@
 
   <!-- 今のおすすめタブ -->
   <section id="tab-recommend" class="tab-content">
-    <p class="hint">上の「今の気分」を設定してから押してください</p>
-    <div class="recommend-controls">
-      <button id="btn-recommend">🔮 おすすめを見る</button>
-    </div>
+    <p class="hint">🔮 上の「今の気分」バーを動かすと、おすすめがリアルタイムに更新されます</p>
     <p id="recommend-mode-note" class="hint"></p>
-    <div id="recommend-results" class="recommend-results"></div>
+    <div class="battle-area" id="recommend-battle-area" style="display:none;">
+      <div class="battle-card" id="rec-card-a"></div>
+      <div class="vs">VS</div>
+      <div class="battle-card" id="rec-card-b"></div>
+    </div>
+    <div id="recommend-winner" class="recommend-winner"></div>
   </section>
 
   <!-- ランキングタブ -->

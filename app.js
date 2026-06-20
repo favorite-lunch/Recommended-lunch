@@ -288,15 +288,40 @@ function mlRecommendations(mood) {
   return scored.slice(0, RECOMMEND_COUNT);
 }
 
-function renderRecommendations(items, scoreFormatter) {
-  const container = document.getElementById("recommend-results");
-  container.innerHTML = "";
-  items.forEach(({ restaurant, score }) => {
-    const card = document.createElement("div");
-    card.className = "battle-card recommend-card";
-    renderBattleCard(card, restaurant, scoreFormatter(score));
-    container.appendChild(card);
-  });
+// おすすめ上位を「対戦カード」として1組ずつ提示し、選んだ結果をそのままElo更新・AI学習データにも使う
+let recommendQueue = [];
+let recommendScoreFormatter = () => "";
+
+function renderRecommendPair() {
+  const area = document.getElementById("recommend-battle-area");
+  const winnerBox = document.getElementById("recommend-winner");
+  const cardA = document.getElementById("rec-card-a");
+  const cardB = document.getElementById("rec-card-b");
+
+  if (recommendQueue.length === 0) {
+    area.style.display = "none";
+    winnerBox.textContent = "";
+    return;
+  }
+  if (recommendQueue.length === 1) {
+    area.style.display = "none";
+    winnerBox.textContent = `🎉 これに決定！「${recommendQueue[0].restaurant.name}」`;
+    return;
+  }
+
+  area.style.display = "flex";
+  winnerBox.textContent = "";
+  renderBattleCard(cardA, recommendQueue[0].restaurant, recommendScoreFormatter(recommendQueue[0].score));
+  renderBattleCard(cardB, recommendQueue[1].restaurant, recommendScoreFormatter(recommendQueue[1].score));
+}
+
+function pickRecommendWinner(winnerIndex) {
+  const winner = recommendQueue[winnerIndex];
+  const loser = recommendQueue[1 - winnerIndex];
+  applyResult(winner.restaurant.id, loser.restaurant.id, 1);
+  recommendQueue = [winner, ...recommendQueue.slice(2)];
+  renderRecommendPair();
+  renderRanking();
 }
 
 async function showRecommendations() {
@@ -308,8 +333,10 @@ async function showRecommendations() {
     if (!mlModel) await initModel();
     const results = mlRecommendations(mood);
     if (results) {
-      note.textContent = `対戦データ${battleLog.length}件から学習したAIモデルでおすすめ中`;
-      renderRecommendations(results, (s) => `推薦度 ${s.toFixed(2)}`);
+      note.textContent = `対戦データ${battleLog.length}件から学習したAIモデルでおすすめ中(選ぶとさらに学習されます)`;
+      recommendQueue = results;
+      recommendScoreFormatter = (s) => `推薦度 ${s.toFixed(2)}`;
+      renderRecommendPair();
       return;
     }
   }
@@ -317,13 +344,23 @@ async function showRecommendations() {
   const reason = isMlAvailable()
     ? `対戦データがまだ${battleLog.length}件(${MIN_BATTLES_FOR_ML}件以上で学習モデルに切替)のため`
     : "AIモデル(TensorFlow.js)が読み込めない(オフライン等)ため";
-  note.textContent = `${reason}、ジャンルの簡易マッチングでおすすめしています`;
-  const results = ruleBasedRecommendations(mood);
-  renderRecommendations(results, (s) => `マッチ度 ${s.toFixed(2)}`);
+  note.textContent = `${reason}、ジャンルの簡易マッチングでおすすめしています(選ぶとAI学習データにもなります)`;
+  recommendQueue = ruleBasedRecommendations(mood);
+  recommendScoreFormatter = (s) => `マッチ度 ${s.toFixed(2)}`;
+  renderRecommendPair();
 }
 
 function setupRecommendHandlers() {
-  document.getElementById("btn-recommend").addEventListener("click", showRecommendations);
+  document.getElementById("mood-hunger").addEventListener("input", showRecommendations);
+  document.getElementById("mood-sweet").addEventListener("input", showRecommendations);
+  document.getElementById("rec-card-a").addEventListener("click", () => {
+    if (recommendQueue.length < 2) return;
+    pickRecommendWinner(0);
+  });
+  document.getElementById("rec-card-b").addEventListener("click", () => {
+    if (recommendQueue.length < 2) return;
+    pickRecommendWinner(1);
+  });
 }
 
 // ---------- ランキングタブ ----------
@@ -446,6 +483,7 @@ function setupTabs() {
       document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+      if (btn.dataset.tab === "recommend") showRecommendations();
     });
   });
 }

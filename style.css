@@ -106,6 +106,7 @@ main {
 }
 
 .battle-card {
+  position: relative;
   flex: 1 1 280px;
   max-width: 320px;
   background: #fff;
@@ -192,31 +193,12 @@ main {
   color: #d9534f;
 }
 
-.recommend-controls {
+.recommend-winner {
   text-align: center;
-  margin-bottom: 12px;
-}
-
-#btn-recommend {
-  background: #d9534f;
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 24px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.recommend-results {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-}
-
-.recommend-card {
-  cursor: default;
-  position: relative;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #d9534f;
+  margin-top: 16px;
 }
 
 .score-badge {
