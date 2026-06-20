@@ -77,7 +77,7 @@ function getCurrentMood() {
   };
 }
 
-// 神田錦町オフィス付近の座標で現在の気温・湿度・天候をOpen-Meteo(APIキー不要)から取得
+// 神田錦町・神保町エリア付近の座標で現在の気温・湿度・天候をOpen-Meteo(APIキー不要)から取得
 const WEATHER_API_URL =
   "https://api.open-meteo.com/v1/forecast?latitude=35.694&longitude=139.758&current=temperature_2m,relative_humidity_2m,weather_code&timezone=Asia%2FTokyo";
 const DEFAULT_WEATHER = { temperature: 20, humidity: 50, weatherCode: 1 };
