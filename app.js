@@ -34,7 +34,6 @@ const GENRE_EMOJI = {
 };
 
 let restaurants = [];
-let currentPair = [];
 let battleLog = [];
 let mlModel = null;
 
@@ -154,18 +153,7 @@ function applyResult(idA, idB, scoreA) {
   recordBattle(idA, idB, scoreA);
 }
 
-// ---------- 対戦タブ ----------
-function pickPair() {
-  if (restaurants.length < 2) {
-    currentPair = [];
-    return;
-  }
-  const i = Math.floor(Math.random() * restaurants.length);
-  let j = Math.floor(Math.random() * (restaurants.length - 1));
-  if (j >= i) j += 1;
-  currentPair = [restaurants[i].id, restaurants[j].id];
-}
-
+// ---------- 対戦カード描画 ----------
 function renderBattleCard(el, restaurant, scoreLabel) {
   el.innerHTML = "";
   if (!restaurant) {
@@ -213,62 +201,22 @@ function renderBattleCard(el, restaurant, scoreLabel) {
   el.appendChild(info);
 }
 
-function renderBattle() {
-  if (currentPair.length < 2) {
-    pickPair();
-  }
-  const cardA = document.getElementById("card-a");
-  const cardB = document.getElementById("card-b");
-  if (currentPair.length < 2) {
-    renderBattleCard(cardA, null);
-    renderBattleCard(cardB, null);
-    return;
-  }
-  renderBattleCard(cardA, findRestaurant(currentPair[0]));
-  renderBattleCard(cardB, findRestaurant(currentPair[1]));
-}
-
-function nextBattle() {
-  pickPair();
-  renderBattle();
-}
-
-function setupBattleHandlers() {
-  document.getElementById("card-a").addEventListener("click", () => {
-    if (currentPair.length < 2) return;
-    applyResult(currentPair[0], currentPair[1], 1);
-    nextBattle();
-    renderRanking();
-  });
-  document.getElementById("card-b").addEventListener("click", () => {
-    if (currentPair.length < 2) return;
-    applyResult(currentPair[1], currentPair[0], 1);
-    nextBattle();
-    renderRanking();
-  });
-  document.getElementById("btn-draw").addEventListener("click", () => {
-    if (currentPair.length < 2) return;
-    applyResult(currentPair[0], currentPair[1], 0.5);
-    nextBattle();
-    renderRanking();
-  });
-  document.getElementById("btn-skip").addEventListener("click", () => {
-    nextBattle();
-  });
-}
-
-// ---------- 今のおすすめタブ ----------
-// 空腹度が高いほどボリューム系、低いほど軽め系を優先。気温が低い日は温かい物、高い日は冷たい/軽い物を軽く優先
+// ---------- おすすめ対戦(気分バー連動) ----------
+// mood.hunger: 1(空腹)〜3(普通)〜5(満腹)。空腹なほどボリューム系、満腹に近いほど軽め系を優先
+// mood.sweet:  1(辛い/しょっぱい物欲)〜3(普通)〜5(甘い物欲)
+// 気温が低い日は温かい物、高い日は冷たい/軽い物を軽く優先
 const HEAVY_GENRES = ["焼肉", "とんかつ", "ハンバーグ・ステーキ", "中華", "カレー", "インドカレー", "ラーメン", "天丼", "ビアホール・洋食", "餃子"];
 const LIGHT_GENRES = ["そば", "うどん", "寿司", "洋食・喫茶", "カフェ", "和食", "ベーカリーカフェ"];
 const SWEET_GENRES = ["カフェ", "ベーカリーカフェ", "洋食・喫茶"];
+const SAVORY_SPICY_GENRES = ["カレー", "インドカレー", "インド料理", "韓国料理", "タイ料理", "ベトナム料理", "中華"];
 
 function ruleBasedRecommendations(mood) {
   const scored = restaurants.map((r) => {
     let score = 0;
-    if (mood.hunger >= 4 && HEAVY_GENRES.includes(r.genre)) score += 2;
-    if (mood.hunger <= 2 && LIGHT_GENRES.includes(r.genre)) score += 2;
+    if (mood.hunger <= 2 && HEAVY_GENRES.includes(r.genre)) score += 2;
+    if (mood.hunger >= 4 && LIGHT_GENRES.includes(r.genre)) score += 2;
     if (mood.sweet >= 4 && SWEET_GENRES.includes(r.genre)) score += 2;
+    if (mood.sweet <= 2 && SAVORY_SPICY_GENRES.includes(r.genre)) score += 2;
     if (currentWeather.temperature <= 10 && HEAVY_GENRES.includes(r.genre)) score += 1;
     if (currentWeather.temperature >= 28 && LIGHT_GENRES.includes(r.genre)) score += 1;
     score += r.rating / 1000; // 同点時はレーティングでタイブレーク
@@ -293,10 +241,10 @@ let recommendQueue = [];
 let recommendScoreFormatter = () => "";
 
 function renderRecommendPair() {
-  const area = document.getElementById("recommend-battle-area");
+  const area = document.getElementById("battle-area");
   const winnerBox = document.getElementById("recommend-winner");
-  const cardA = document.getElementById("rec-card-a");
-  const cardB = document.getElementById("rec-card-b");
+  const cardA = document.getElementById("card-a");
+  const cardB = document.getElementById("card-b");
 
   if (recommendQueue.length === 0) {
     area.style.display = "none";
@@ -322,6 +270,27 @@ function pickRecommendWinner(winnerIndex) {
   recommendQueue = [winner, ...recommendQueue.slice(2)];
   renderRecommendPair();
   renderRanking();
+}
+
+function drawCurrentPair() {
+  if (recommendQueue.length < 2) return;
+  applyResult(recommendQueue[0].restaurant.id, recommendQueue[1].restaurant.id, 0.5);
+  recommendQueue = recommendQueue.slice(2);
+  if (recommendQueue.length < 2) {
+    showRecommendations();
+  } else {
+    renderRecommendPair();
+  }
+  renderRanking();
+}
+
+function skipCurrentPair() {
+  recommendQueue = recommendQueue.slice(2);
+  if (recommendQueue.length < 2) {
+    showRecommendations();
+  } else {
+    renderRecommendPair();
+  }
 }
 
 async function showRecommendations() {
@@ -353,13 +322,96 @@ async function showRecommendations() {
 function setupRecommendHandlers() {
   document.getElementById("mood-hunger").addEventListener("input", showRecommendations);
   document.getElementById("mood-sweet").addEventListener("input", showRecommendations);
-  document.getElementById("rec-card-a").addEventListener("click", () => {
+  document.getElementById("card-a").addEventListener("click", () => {
     if (recommendQueue.length < 2) return;
     pickRecommendWinner(0);
   });
-  document.getElementById("rec-card-b").addEventListener("click", () => {
+  document.getElementById("card-b").addEventListener("click", () => {
     if (recommendQueue.length < 2) return;
     pickRecommendWinner(1);
+  });
+  document.getElementById("btn-draw").addEventListener("click", drawCurrentPair);
+  document.getElementById("btn-skip").addEventListener("click", skipCurrentPair);
+}
+
+// ---------- 学習タブ(ランダム気分×ランダム対戦でAI学習データを増やす) ----------
+// 天候・時間は実際の状況に依存させず、中立値に固定して「気分とお店の相性」だけを学習させる
+const NEUTRAL_AUTO = { hour: 12, dow: 3 };
+let learnMood = { hunger: 3, sweet: 3 };
+let learnPair = [];
+
+function randomMood() {
+  return {
+    hunger: 1 + Math.floor(Math.random() * 5),
+    sweet: 1 + Math.floor(Math.random() * 5)
+  };
+}
+
+function pickRandomPair() {
+  if (restaurants.length < 2) return [];
+  const i = Math.floor(Math.random() * restaurants.length);
+  let j = Math.floor(Math.random() * (restaurants.length - 1));
+  if (j >= i) j += 1;
+  return [restaurants[i].id, restaurants[j].id];
+}
+
+function renderLearnRound() {
+  document.getElementById("learn-hunger-bar").value = learnMood.hunger;
+  document.getElementById("learn-sweet-bar").value = learnMood.sweet;
+  document.getElementById("learn-mood-note").textContent = `学習データ ${battleLog.length}件`;
+
+  const cardA = document.getElementById("learn-card-a");
+  const cardB = document.getElementById("learn-card-b");
+  if (learnPair.length < 2) {
+    renderBattleCard(cardA, null);
+    renderBattleCard(cardB, null);
+    return;
+  }
+  renderBattleCard(cardA, findRestaurant(learnPair[0]));
+  renderBattleCard(cardB, findRestaurant(learnPair[1]));
+}
+
+function newLearnRound() {
+  learnMood = randomMood();
+  learnPair = pickRandomPair();
+  renderLearnRound();
+}
+
+// Eloレーティング(実際の好み)には影響させず、AI学習データ(battleLog)だけに追加する
+function recordLearnBattle(idA, idB, scoreA) {
+  battleLog.push({
+    timestamp: Date.now(),
+    aId: idA,
+    bId: idB,
+    scoreA,
+    mood: learnMood,
+    auto: NEUTRAL_AUTO,
+    weather: DEFAULT_WEATHER
+  });
+  saveBattleLog();
+  if (isMlAvailable() && battleLog.length % RETRAIN_INTERVAL === 0) {
+    retrainModel();
+  }
+}
+
+function setupLearnHandlers() {
+  document.getElementById("learn-card-a").addEventListener("click", () => {
+    if (learnPair.length < 2) return;
+    recordLearnBattle(learnPair[0], learnPair[1], 1);
+    newLearnRound();
+  });
+  document.getElementById("learn-card-b").addEventListener("click", () => {
+    if (learnPair.length < 2) return;
+    recordLearnBattle(learnPair[1], learnPair[0], 1);
+    newLearnRound();
+  });
+  document.getElementById("btn-learn-draw").addEventListener("click", () => {
+    if (learnPair.length < 2) return;
+    recordLearnBattle(learnPair[0], learnPair[1], 0.5);
+    newLearnRound();
+  });
+  document.getElementById("btn-learn-skip").addEventListener("click", () => {
+    newLearnRound();
   });
 }
 
@@ -405,7 +457,7 @@ function renderManage() {
         r[input.dataset.field] = input.value;
         saveData();
         renderRanking();
-        renderBattle();
+        showRecommendations();
       });
     });
     tr.querySelector('[data-action="delete"]').addEventListener("click", () => {
@@ -414,7 +466,7 @@ function renderManage() {
       saveData();
       renderManage();
       renderRanking();
-      nextBattle();
+      showRecommendations();
     });
     tbody.appendChild(tr);
   });
@@ -454,7 +506,7 @@ function setupDangerZone() {
     });
     saveData();
     renderRanking();
-    nextBattle();
+    showRecommendations();
   });
 
   document.getElementById("btn-reset-data").addEventListener("click", () => {
@@ -463,7 +515,7 @@ function setupDangerZone() {
     loadData();
     renderManage();
     renderRanking();
-    nextBattle();
+    showRecommendations();
   });
 
   document.getElementById("btn-clear-battlelog").addEventListener("click", () => {
@@ -483,7 +535,6 @@ function setupTabs() {
       document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
-      if (btn.dataset.tab === "recommend") showRecommendations();
     });
   });
 }
@@ -505,11 +556,12 @@ function init() {
   loadData();
   loadBattleLog();
   setupTabs();
-  setupBattleHandlers();
   setupRecommendHandlers();
+  setupLearnHandlers();
   setupAddForm();
   setupDangerZone();
-  nextBattle();
+  showRecommendations();
+  newLearnRound();
   renderRanking();
   renderManage();
   initModel();

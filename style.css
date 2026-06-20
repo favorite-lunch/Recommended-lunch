@@ -77,6 +77,13 @@ header h1 {
   width: 100%;
 }
 
+.mood-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #a8662b;
+}
+
 main {
   max-width: 800px;
   margin: 0 auto;

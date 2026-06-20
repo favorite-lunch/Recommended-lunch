@@ -13,7 +13,7 @@
   <h1>🍜 神保町ランチお気に入りランキング</h1>
   <nav class="tabs">
     <button class="tab-btn active" data-tab="battle">対戦</button>
-    <button class="tab-btn" data-tab="recommend">今のおすすめ</button>
+    <button class="tab-btn" data-tab="learn">学習</button>
     <button class="tab-btn" data-tab="ranking">ランキング</button>
     <button class="tab-btn" data-tab="manage">お店管理</button>
   </nav>
@@ -22,41 +22,58 @@
 <section id="mood-panel">
   <h2>今の気分</h2>
   <div class="mood-sliders">
-    <label>🍽️ 空腹度
+    <label>🍽️
       <input type="range" id="mood-hunger" min="1" max="5" value="3">
+      <span class="mood-scale"><span>空腹</span><span>普通</span><span>満腹</span></span>
     </label>
-    <label>🍰 甘いもの欲
+    <label>🍰
       <input type="range" id="mood-sweet" min="1" max="5" value="3">
+      <span class="mood-scale"><span>辛い</span><span>普通</span><span>甘い</span></span>
     </label>
   </div>
   <p id="auto-context-note" class="hint"></p>
 </section>
 
 <main>
-  <!-- 対戦タブ -->
+  <!-- 対戦タブ(気分バー連動のおすすめ2択) -->
   <section id="tab-battle" class="tab-content active">
-    <p class="hint">行きたい方のお店をタップしてください</p>
-    <div class="battle-area">
+    <p class="hint">🔮 上の「今の気分」バーを動かすと、おすすめが更新されます。行きたい方をタップしてください</p>
+    <p id="recommend-mode-note" class="hint"></p>
+    <div class="battle-area" id="battle-area">
       <div class="battle-card" id="card-a"></div>
       <div class="vs">VS</div>
       <div class="battle-card" id="card-b"></div>
     </div>
+    <div id="recommend-winner" class="recommend-winner"></div>
     <div class="battle-controls">
       <button id="btn-draw">どちらも行きたい(引き分け)</button>
-      <button id="btn-skip">スキップ(別の組み合わせ)</button>
+      <button id="btn-skip">どちらも気分じゃない(次の組み合わせ)</button>
     </div>
   </section>
 
-  <!-- 今のおすすめタブ -->
-  <section id="tab-recommend" class="tab-content">
-    <p class="hint">🔮 上の「今の気分」バーを動かすと、おすすめがリアルタイムに更新されます</p>
-    <p id="recommend-mode-note" class="hint"></p>
-    <div class="battle-area" id="recommend-battle-area" style="display:none;">
-      <div class="battle-card" id="rec-card-a"></div>
-      <div class="vs">VS</div>
-      <div class="battle-card" id="rec-card-b"></div>
+  <!-- 学習タブ(ランダムな気分×ランダムな対戦でAI学習データを増やす) -->
+  <section id="tab-learn" class="tab-content">
+    <p class="hint">気分をランダムに想定し、ランダムな2店で対戦してもらいます。天候や時間は中立値に固定し、気分とお店の相性だけを学習データにします</p>
+    <div class="mood-sliders">
+      <label>🍽️
+        <input type="range" id="learn-hunger-bar" min="1" max="5" value="3" disabled>
+        <span class="mood-scale"><span>空腹</span><span>普通</span><span>満腹</span></span>
+      </label>
+      <label>🍰
+        <input type="range" id="learn-sweet-bar" min="1" max="5" value="3" disabled>
+        <span class="mood-scale"><span>辛い</span><span>普通</span><span>甘い</span></span>
+      </label>
     </div>
-    <div id="recommend-winner" class="recommend-winner"></div>
+    <p id="learn-mood-note" class="hint"></p>
+    <div class="battle-area" id="learn-battle-area">
+      <div class="battle-card" id="learn-card-a"></div>
+      <div class="vs">VS</div>
+      <div class="battle-card" id="learn-card-b"></div>
+    </div>
+    <div class="battle-controls">
+      <button id="btn-learn-draw">どちらも行きたい(引き分け)</button>
+      <button id="btn-learn-skip">スキップ(別の組み合わせ)</button>
+    </div>
   </section>
 
   <!-- ランキングタブ -->
