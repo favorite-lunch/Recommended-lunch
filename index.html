@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>神保町ランチお気に入りランキング</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d9534f">
+</head>
+<body>
+<header>
+  <h1>🍜 神保町ランチお気に入りランキング</h1>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="battle">対戦</button>
+    <button class="tab-btn" data-tab="recommend">今のおすすめ</button>
+    <button class="tab-btn" data-tab="ranking">ランキング</button>
+    <button class="tab-btn" data-tab="manage">お店管理</button>
+  </nav>
+</header>
+
+<section id="mood-panel">
+  <h2>今の気分</h2>
+  <div class="mood-sliders">
+    <label>🍽️ 空腹度
+      <input type="range" id="mood-hunger" min="1" max="5" value="3">
+    </label>
+    <label>🍰 甘いもの欲
+      <input type="range" id="mood-sweet" min="1" max="5" value="3">
+    </label>
+  </div>
+  <p id="auto-context-note" class="hint"></p>
+</section>
+
+<main>
+  <!-- 対戦タブ -->
+  <section id="tab-battle" class="tab-content active">
+    <p class="hint">行きたい方のお店をタップしてください</p>
+    <div class="battle-area">
+      <div class="battle-card" id="card-a"></div>
+      <div class="vs">VS</div>
+      <div class="battle-card" id="card-b"></div>
+    </div>
+    <div class="battle-controls">
+      <button id="btn-draw">どちらも行きたい(引き分け)</button>
+      <button id="btn-skip">スキップ(別の組み合わせ)</button>
+    </div>
+  </section>
+
+  <!-- 今のおすすめタブ -->
+  <section id="tab-recommend" class="tab-content">
+    <p class="hint">上の「今の気分」を設定してから押してください</p>
+    <div class="recommend-controls">
+      <button id="btn-recommend">🔮 おすすめを見る</button>
+    </div>
+    <p id="recommend-mode-note" class="hint"></p>
+    <div id="recommend-results" class="recommend-results"></div>
+  </section>
+
+  <!-- ランキングタブ -->
+  <section id="tab-ranking" class="tab-content">
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>順位</th>
+          <th>店名</th>
+          <th>ジャンル</th>
+          <th>代表メニュー</th>
+          <th>価格</th>
+          <th>レーティング</th>
+          <th>対戦数</th>
+          <th>リンク</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-body"></tbody>
+    </table>
+  </section>
+
+  <!-- お店管理タブ -->
+  <section id="tab-manage" class="tab-content">
+    <h2>お店を追加</h2>
+    <form id="form-add">
+      <input type="text" id="input-name" placeholder="店名" required>
+      <input type="text" id="input-genre" placeholder="ジャンル">
+      <input type="text" id="input-dish" placeholder="代表メニュー">
+      <input type="text" id="input-price" placeholder="価格(例: ¥1,000)">
+      <input type="text" id="input-image" placeholder="画像URL(任意)">
+      <input type="text" id="input-url" placeholder="お店のサイトURL(任意)">
+      <input type="text" id="input-note" placeholder="メモ(任意)">
+      <button type="submit">追加</button>
+    </form>
+
+    <h2>登録済みのお店</h2>
+    <table class="manage-table">
+      <thead>
+        <tr>
+          <th>店名</th>
+          <th>ジャンル</th>
+          <th>代表メニュー</th>
+          <th>価格</th>
+          <th>画像URL</th>
+          <th>サイトURL</th>
+          <th>メモ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="manage-body"></tbody>
+    </table>
+
+    <div class="danger-zone">
+      <button id="btn-reset-rating">レーティングを初期値にリセット</button>
+      <button id="btn-reset-data">店舗データを初期状態に戻す</button>
+      <button id="btn-clear-battlelog">AI学習データ(対戦履歴)を削除</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
